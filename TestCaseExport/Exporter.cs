@@ -8,6 +8,8 @@ using System.Linq;
 using Microsoft.TeamFoundation.TestManagement.Client;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
+using Microsoft.TeamFoundation.WorkItemTracking.Client;
+using Microsoft.TeamFoundation.Warehouse;
 
 namespace TestCaseExport
 {
@@ -18,6 +20,10 @@ namespace TestCaseExport
     {
 
         int stepID;
+
+        public FieldCollection testCaseCustomField { get; private set; }
+        public int fieldID;
+        public string stringInput;
 
         public void Export(string filename, ITestSuiteBase testSuite)
         {
@@ -34,7 +40,7 @@ namespace TestCaseExport
                     stepID = 1;
                     int duplicateInstance = 0;
                     ExcelWorksheet sheet;
-
+                    
 retry:
                     try
                     {
@@ -52,9 +58,20 @@ retry:
                         duplicateInstance++;
                         goto retry;
                     }
-                    
 
-                                        
+
+                    testCaseCustomField = testCase.WorkItem.Fields;
+                    //MessageBox.Show(testCaseCustomField.IndexOf(CarabID));
+                    foreach (Field t in testCaseCustomField)
+                    {
+                        if (t.Name == "Test Data")
+                        {
+                            fieldID = t.Id;
+                        }
+
+                        //MessageBox.Show(t.Name);
+                        
+                    }
 
                     #region Sheet Formatting
 
@@ -137,8 +154,10 @@ retry:
                     sheet.Cells[45, 2, 45, 5].Merge = true;
                     sheet.Cells[46, 2, 46, 5].Merge = true;
                     sheet.Cells[42, 2, 42, 5].Style.Font.Bold = true;
-                    sheet.Cells[42, 2].Value = "Special Procedural Requirements";
+                    sheet.Cells[42, 2].Value = "Test Data";
                     sheet.Cells[43, 2].Value = "Constraints etc";
+                    stringInput = testCase.WorkItem.Fields.GetById(fieldID).Value.ToString();
+                    new HtmlToRichTextHelper().HtmlToRichText(sheet.Cells[43, 2], stringInput);
 
                     //B48 - E52
                     sheet.Cells[48, 2, 48, 5].Merge = true;
@@ -205,7 +224,7 @@ retry:
                                 //    //mergedText.Style.VerticalAlignment = ExcelVerticalAlignment.Top;
                                 //}
                             }
-                        }
+                 }
 
                         pkg.SaveAs(new FileInfo(filename));
             }
